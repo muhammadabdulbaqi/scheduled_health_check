@@ -1,12 +1,30 @@
+
+def get_env_var(key, required=True, json_parse=False, cast_int=False):
+    value = os.getenv(key)
+    if required and not value:
+        raise ValueError(f"❌ Missing required environment variable: {key}")
+    if json_parse:
+        import json
+        try:
+            value = json.loads(value)
+        except Exception as e:
+            raise ValueError(f"❌ Failed to parse {key} as JSON: {e}")
+    if cast_int:
+        try:
+            value = int(value)
+        except Exception as e:
+            raise ValueError(f"❌ Failed to cast {key} to int: {e}")
+    return value
+
 import os
 import json
 import smtplib
 from email.message import EmailMessage
-from dotenv import load_dotenv
+
 from rapidfuzz import fuzz
 
 # === Load .env ===
-load_dotenv()
+
 EMAIL_USER = os.getenv("EMAIL_USER")  # e.g., m.abdulbaqi1702@gmail.com
 EMAIL_PASS = os.getenv("EMAIL_PASS")  # Gmail password (NOT app password)
 EMAIL_TO = os.getenv("EMAIL_TO")      # e.g., engineering@datasciencedojo.com
