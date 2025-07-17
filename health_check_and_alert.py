@@ -1,4 +1,9 @@
+import os
+import json
+from azure.communication.email import EmailClient
+from rapidfuzz import fuzz
 
+# === Environment Variable Loader ===
 def get_env_var(key, required=True, json_parse=False, cast_int=False):
     value = os.getenv(key)
     if required and not value:
@@ -16,19 +21,6 @@ def get_env_var(key, required=True, json_parse=False, cast_int=False):
             raise ValueError(f"❌ Failed to cast {key} to int: {e}")
     return value
 
-import os
-import json
-import smtplib
-from email.message import EmailMessage
-
-from rapidfuzz import fuzz
-
-# === Load .env ===
-
-EMAIL_USER = os.getenv("EMAIL_USER")  # e.g., m.abdulbaqi1702@gmail.com
-EMAIL_PASS = os.getenv("EMAIL_PASS")  # Gmail password (NOT app password)
-EMAIL_TO = os.getenv("EMAIL_TO")      # e.g., engineering@datasciencedojo.com
-
 # === Config ===
 QUERY_RESULTS_FILE = "evaluation_query_results.json"
 OUTPUT_MATCHES_FILE = "fallback_matches.json"
@@ -39,6 +31,7 @@ fallback_phrases = [
     "Sorry, I cannot find the answer in the available sources."
 ]
 
+# === Fallback Detection ===
 def detect_fallbacks():
     try:
         with open(QUERY_RESULTS_FILE, "r") as f:
@@ -75,29 +68,41 @@ def detect_fallbacks():
         print("✅ No fallback-style responses detected.")
     return matches
 
-def send_email(match_count):
-    subject = "⚠️ RAI Health Check Fallback Detected"
-    body = f"""
-The health check returned {match_count} fallback-style responses. Please check service health — it may be down.
-
-This is an automated alert from the evaluation monitoring system.
-"""
-
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = EMAIL_USER
-    msg["To"] = EMAIL_TO
-    msg.set_content(body)
+# === Email Alert via ACS ===
+def send_email():
+    subject = "RAI Health Check Alert"
+    plain_text = (
+        "The health check returned an issue in the responses. "
+        "Please check service health as it may be down."
+    )
 
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-            smtp.login(EMAIL_USER, EMAIL_PASS)
-            smtp.send_message(msg)
-            print(f"✅ Alert email sent to {EMAIL_TO}")
+        connection_string = get_env_var("ACS_CONNECTION_STRING")
+        sender = get_env_var("ACS_SENDER_EMAIL")
+        recipient = get_env_var("ACS_RECIPIENT_EMAIL")
+
+        client = EmailClient.from_connection_string(connection_string)
+        message = {
+            "senderAddress": sender,
+            "recipients": {
+                "to": [{"address": recipient}]
+            },
+            "content": {
+                "subject": subject,
+                "plainText": plain_text,
+            },
+        }
+
+        poller = client.begin_send(message)
+        result = poller.result()
+        message_id = getattr(result, "message_id", "unknown")
+        print(f"✅ Alert email sent. Message ID: {message_id}")
+
     except Exception as e:
         print(f"❌ Failed to send alert email: {e}")
 
+# === Main ===
 if __name__ == "__main__":
     matches = detect_fallbacks()
     if matches:
-        send_email(len(matches))
+        send_email()

@@ -1,38 +1,23 @@
-
-def get_env_var(key, required=True, json_parse=False, cast_int=False):
-    value = os.getenv(key)
-    if required and not value:
-        raise ValueError(f"❌ Missing required environment variable: {key}")
-    if json_parse:
-        import json
-        try:
-            value = json.loads(value)
-        except Exception as e:
-            raise ValueError(f"❌ Failed to parse {key} as JSON: {e}")
-    if cast_int:
-        try:
-            value = int(value)
-        except Exception as e:
-            raise ValueError(f"❌ Failed to cast {key} to int: {e}")
-    return value
-
 import os
 import time
 import json
 import requests
 import subprocess
+from dotenv import load_dotenv
 
+# === Load ENV from .env ===
+load_dotenv()  # Only for local usage
 
-# === Load ENV ===
+# === Prepare environment for subprocesses ===
+subprocess_env = os.environ.copy()  # includes loaded .env vars
 
+# === Constants ===
 BASE_URL = os.getenv("BASE_URL")
 API_KEY = os.getenv("API_KEY")
 HEADERS = {
     "Authorization": API_KEY,
     "Accept": "application/json"
 }
-
-# === Constants ===
 EVAL_FILE = "latest_eval.json"
 WAIT_INTERVAL = 20 * 60  # 20 minutes
 MAX_ATTEMPTS = 6         # 6 x 20 mins = 2 hours
@@ -71,7 +56,7 @@ def run_pipeline():
     print("🚀 Starting Evaluation Pipeline\n")
 
     # Step 1: Create evaluation
-    subprocess.run(["python", "create_evaluation.py"], check=True)
+    subprocess.run(["python", "create_evaluation.py"], check=True, env=subprocess_env)
 
     # Step 2: Load ID
     eval_id = get_eval_id()
@@ -81,10 +66,10 @@ def run_pipeline():
         return
 
     # Step 4: Retrieve results
-    subprocess.run(["python", "get_evaluation.py"], check=True)
+    subprocess.run(["python", "get_evaluation.py"], check=True, env=subprocess_env)
 
     # Step 5: Detect fallbacks + alert
-    subprocess.run(["python", "health_check_and_alert.py"], check=True)
+    subprocess.run(["python", "health_check_and_alert.py"], check=True, env=subprocess_env)
 
 if __name__ == "__main__":
     run_pipeline()
