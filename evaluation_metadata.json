@@ -2,7 +2,7 @@
   "success": true,
   "message": "Evaluation retrieved successfully",
   "data": {
-    "id": 323,
+    "id": 327,
     "agent": 5,
     "final_scores": {
       "ethics and safety": {
@@ -19,18 +19,18 @@
       "category_triggered": {}
     },
     "evaluation_name": "Auto Evaluation - Python Script",
-    "total_query_count": 11,
-    "completed_query_count": 11,
+    "total_query_count": 2,
+    "completed_query_count": 2,
     "status": "completed",
-    "created_on": "2025-07-17T21:51:26.606077Z",
+    "created_on": "2025-07-18T14:53:50.649410Z",
     "created_by": "abdul.baqi@enterprisedb.com",
-    "modified_on": "2025-07-17T21:51:26.606095Z",
+    "modified_on": "2025-07-18T14:53:50.649429Z",
     "modified_by": "",
     "evaluation_dataset_info": [
       {
-        "id": 103,
-        "name": "Health Check",
-        "query_count": 11
+        "id": 23,
+        "name": "RAI Evaluation",
+        "query_count": 2
       }
     ]
   }

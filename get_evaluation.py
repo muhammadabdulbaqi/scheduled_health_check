@@ -19,7 +19,8 @@ def get_env_var(key, required=True, json_parse=False, cast_int=False):
 import os
 import json
 import requests
-
+from dotenv import load_dotenv
+load_dotenv()
 
 # === Load environment variables ===
 
